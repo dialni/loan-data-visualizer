@@ -1,7 +1,10 @@
 from enum import Enum
+from datetime import datetime
 import re
 
+
 class Status(Enum):
+    '''Defines the type of post, e.g. if someone is requesting a loan'''
     REQ = 1
     PAID = 2
     UNPAID = 3
@@ -16,30 +19,29 @@ class Currency(Enum):
     XXX = 5 # Unknown currency, used instead of None for invalid posts
 
 class Post():
-    '''DTO model of Posts on Subreddits'''
+    '''Data Model of Posts on Subreddits'''
     id: str
     status: Status
     title: str
-    currency: Currency = None
-    amount: int = 0
+    currency: Currency
+    amount: int = 0       # Loan principal
+    isActive: bool = None # Only relevant for [REQ] posts
+    timestamp: datetime
     
-    def __init__(self, id:str, title:str):
+    def __init__(self, id:str, title:str, timestamp:float, commentsCount: int):
         self.id = id
         self.title = title.upper()
+        self.timestamp = datetime.fromtimestamp(timestamp)
         self.ParsePostType()
+        self.ParseIsActive(commentsCount)
         self.ParseCurrencyType()
         self.ParseCurrencyAmount()
-        # Assume asked amounts less than 5 to be parsed unsuccessfully
+        # Assume amounts less than 5 to be parsed unsuccessfully
         if self.amount < 5:
             self.status = Status.INVALID
-                
-    def ParsePostType(self) -> Status:
-        '''
-        Parse what type of post from title, e.g. [REQ], [PAID], etc.
-        
-        :return: Status enum of this post
-        :rtype: Status
-        '''
+
+    def ParsePostType(self) -> None:
+        '''Parse what type of post from title, e.g. [REQ], [PAID], etc.'''
         # Lazy parsing implementation, since only 5 valid states
         if self.title.__contains__('[REQ]'):
             self.status = Status.REQ
@@ -51,14 +53,23 @@ class Post():
             self.status = Status.LATE
         else:
             self.status = Status.INVALID
-    
-    def ParseCurrencyType(self) -> Status | None:
-        '''
-        Parses currency from post title.
+            
+    def ParseIsActive(self, commentCount:int) -> None:
+        '''For [REQ] Posts, do a quick chekc to figure out if anyone accepted the loan. 
+           For unsure [REQ] Posts, inspect Post comments later. Assume pre-arranged to be active.'''
+        if self.status is not Status.REQ:
+            return
         
-        :return: Returns status on invalid posts.
-        :rtype: Status | None
-        '''
+        if self.title.__contains__('ARRANGED') and self.title.__contains__('[REQ]'):
+            self.isActive = True
+        
+        # Automated bot always leaves 2 comments on each [REQ] Post.
+        # Assume if no one else posted, then loan is not active and don't use API request.
+        elif commentCount < 3:
+            self.isActive = False
+    
+    def ParseCurrencyType(self) -> None:
+        '''Parses currency from post title.'''
         if self.title.__contains__('USD'):
             self.currency = Currency.USD
 
@@ -87,8 +98,9 @@ class Post():
             self.currency = Currency.XXX
             self.status = Status.INVALID
     
-    def ParseCurrencyAmount(self):
-        '''Make an attempt to find the correct initial amount borrowed (or owed in case of [UNPAID] status)'''
+    def ParseCurrencyAmount(self) -> None:
+        '''Make an attempt to find the correct loan principal requested
+           (or owed in case of [UNPAID] status)'''
         # TODO: Make smarter by being suspecious of non 0 or 5 values in final digit of amount
         # TODO: Add support for dealing with thousands separators, e.g. 1,500 or 1.500
         # Remove date from entry

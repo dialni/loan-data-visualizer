@@ -1,19 +1,19 @@
+from models import *
 import reddit_api
-import psycopg
+import db_api
 
 if __name__ == "__main__":
     api = reddit_api.APITool()
+    db = db_api.Database()
     
-    #api.Auth()
-    #api.TestConnection()
-    #posts = api.GetNewestPostsRaw()
-    #print(posts)
+    api.Auth()    
+    db.CreateTables()
     
-    #posts = api.GetNewestPosts("borrow", 220)
     posts = api.TestExample()
-    i = 0
-    for p in posts:
+    db.InsertPostList(posts)
+    
+    db_posts = db.GetPostsByTimestamp(7)
+    for p in db_posts:
         print(p)
-        i += 1
-        
-    print(f"\n\nTotal posts: {i}")
+    
+    db.CloseConnection()

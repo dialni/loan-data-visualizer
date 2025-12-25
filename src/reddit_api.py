@@ -107,7 +107,12 @@ class APITool():
             # Send response to be parsed by models.py
             nextPage = response['after']
             for child in response['children']:
-                posts.append(Post(child['data']['id'], child['data']['title']))
+                # In accordance with Reddit Data API policy, deleted users are disregarded.
+                if child['data']['author'] != '[deleted]':
+                    posts.append(Post(child['data']['id'], 
+                                      child['data']['title'], 
+                                      child['data']['created'],
+                                      child['data']['num_comments']))
             
         return posts
     
@@ -115,8 +120,18 @@ class APITool():
         '''Used with example.py to test parsing functions, without hammering Reddit Data API'''
         posts: list[Post] = []
         for child in example.json['data']['children']:
-            posts.append(Post(child['data']['id'], child['data']['title']))
+            # In accordance with Reddit Data API policy, deleted users are disregarded.
+            if child['data']['author'] != '[deleted]':
+                posts.append(Post(child['data']['id'], 
+                                  child['data']['title'], 
+                                  child['data']['created'],
+                                  child['data']['num_comments']))
         return posts
     
     def GetNewestPostsRaw(self) -> dict:
+        '''Used for testing purposes, not for production code'''
         return self.GetRequest(f'https://oauth.reddit.com/r/borrow/new/?limit=1').json()
+    
+    def GetCommentsOnPostRaw(self, sr:str, id:str) -> dict:
+        '''Used for testing purposes, not for production code'''
+        return self.GetRequest(f"https://oauth.reddit.com/r/{sr}/comments/{id}").json()

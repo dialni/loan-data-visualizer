@@ -1,5 +1,7 @@
 venv
+.venv
 pyvenv.cfg
 .env
+pg_password.txt
 .vscode
 __pycache__
