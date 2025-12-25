@@ -1,11 +1,15 @@
 import reddit_api
+import psycopg
 
 if __name__ == "__main__":
     api = reddit_api.APITool()
     
     #api.Auth()
     #api.TestConnection()
-    #posts = api.GetNewestPosts("borrow", 50)
+    #posts = api.GetNewestPostsRaw()
+    #print(posts)
+    
+    #posts = api.GetNewestPosts("borrow", 220)
     posts = api.TestExample()
     i = 0
     for p in posts:

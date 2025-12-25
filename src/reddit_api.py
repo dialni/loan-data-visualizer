@@ -87,11 +87,28 @@ class APITool():
         self.GetRequest('https://oauth.reddit.com/api/v1/me')
         print("TestConnection was successful!")
         
-    def GetNewestPosts(self, sr: str, limit=50) -> list[Post]:
+    def GetNewestPosts(self, sr: str, limit=90) -> list[Post]:
         '''Return latest Posts from specified Subreddit'''
+        nextPage = ""
         posts: list[Post] = []
-        for child in self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={limit}').json()['data']['children']:
-            posts.append(Post(child['data']['id'], child['data']['title']))
+        
+        for i in range((limit // 100) + 1):
+            if limit == 0:
+                break
+            c = min(limit, 100)
+            print(f"Sending request for {c}")
+            # Use correct API
+            if nextPage == "":
+                response = self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={c}').json()['data']
+            else:
+                response = self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={c}&after={nextPage}').json()['data']
+            limit = limit - c
+            
+            # Send response to be parsed by models.py
+            nextPage = response['after']
+            for child in response['children']:
+                posts.append(Post(child['data']['id'], child['data']['title']))
+            
         return posts
     
     def TestExample(self) -> list[Post]:
@@ -102,4 +119,4 @@ class APITool():
         return posts
     
     def GetNewestPostsRaw(self) -> dict:
-        return self.GetRequest(f'https://oauth.reddit.com/r/borrow/new/?limit=50').json()
+        return self.GetRequest(f'https://oauth.reddit.com/r/borrow/new/?limit=1').json()

@@ -29,7 +29,9 @@ class Post():
         self.ParsePostType()
         self.ParseCurrencyType()
         self.ParseCurrencyAmount()
-        # if (self.ParsePostType() or self.ParseCurrencyType()) == Status.INVALID:
+        # Assume asked amounts less than 5 to be parsed unsuccessfully
+        if self.amount < 5:
+            self.status = Status.INVALID
                 
     def ParsePostType(self) -> Status:
         '''
@@ -83,18 +85,18 @@ class Post():
         # If parsing fails completely, invalidate post and discard
         else: 
             self.currency = Currency.XXX
-            self.Status = Status.INVALID
+            self.status = Status.INVALID
     
     def ParseCurrencyAmount(self):
         '''Make an attempt to find the correct initial amount borrowed (or owed in case of [UNPAID] status)'''
         # TODO: Make smarter by being suspecious of non 0 or 5 values in final digit of amount
-        
+        # TODO: Add support for dealing with thousands separators, e.g. 1,500 or 1.500
         # Remove date from entry
         regexDate = re.sub(r"(\d{1,2}/\d{1,2}/?\d{0,4}|\d{1,2}TH|\d{1,2}ND|\d{1,2}ST)", "", self.title)
         
         # Try to find group with currency identifier first
         # eg. GBP|EUR|USD|CAD|\$|€|£
-        for group in regexDate.split('('):
+        for group in regexDate.split(')'):
             if re.findall(r'GBP|EUR|USD|CAD|\$|€|£', group).__len__() != 0:
                 try:
                     self.amount = re.findall(r"(\d+)", group).pop(0)
