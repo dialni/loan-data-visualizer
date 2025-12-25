@@ -21,7 +21,7 @@ class Post():
     status: Status
     title: str
     currency: Currency = None
-    amount: float = 0.0
+    amount: int = 0
     
     def __init__(self, id:str, title:str):
         self.id = id
@@ -99,16 +99,16 @@ class Post():
         for group in regexDate.split(')'):
             if re.findall(r'GBP|EUR|USD|CAD|\$|€|£', group).__len__() != 0:
                 try:
-                    self.amount = re.findall(r"(\d+)", group).pop(0)
-                except IndexError:
+                    self.amount = int(re.findall(r"(\d+)", group).pop(0))
+                except (IndexError, ValueError):
                     self.status = Status.INVALID
                 return
             
         # If selective parsing attempt fails, use first available digit group
         regexAmounts = re.findall(r"(\d+)", regexDate)
         try:
-            self.amount = regexAmounts.pop(0)
-        except IndexError:
+            self.amount = int(regexAmounts.pop(0))
+        except (IndexError, ValueError): 
             self.status = Status.INVALID
     
     def ParseRepayAmount(self):
