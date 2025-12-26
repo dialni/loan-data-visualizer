@@ -2,18 +2,23 @@ from models import *
 import os
 import psycopg
 from dotenv import load_dotenv
+from time import sleep
 
 class Database():
-    conn: psycopg.Connection
-    cur: psycopg.Cursor
     
     def __init__(self):
         '''Tool for easily creating and maintaining access to a postgres database'''
-        if not load_dotenv('.env'):
+        if not load_dotenv('../../.env'):
             raise SystemExit('Could not load .env file, exiting.')
 
-        self.conn = psycopg.connect(f'postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:{os.getenv('POSTGRES_PORT')}/mydb')
-        self.cur = self.conn.cursor()
+        while True:
+            try: self.conn = psycopg.connect(f'postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:{os.getenv('POSTGRES_PORT')}/mydb')
+            except psycopg.OperationalError: 
+                print("Failed to connect, retrying in 2 seconds...")
+                sleep(2)
+                continue
+            self.cur = self.conn.cursor()
+            break
     
     def CreateTables(self) -> None:
         '''Create necessary tables and types to store Posts. Wipes any data already present.'''
@@ -71,17 +76,38 @@ class Database():
         return self.cur.fetchall()
     
     def GetPostsByTimestamp(self, days: int) -> list[tuple]:
-        '''Filter by timestamp by {1, 7, 30} days from now. Only 1, 7 and 30 are valid
-            due to prepared statements and string literals.'''
-        match days:
-            case 1:
-                self.cur.execute("SELECT * FROM Posts WHERE (timestamp > NOW() - INTERVAL '1 DAYS')")
-            case 7:
-                self.cur.execute("SELECT * FROM Posts WHERE (timestamp > NOW() - INTERVAL '7 DAYS')")
-            case 30:
-                self.cur.execute("SELECT * FROM Posts WHERE (timestamp > NOW() - INTERVAL '30 DAYS')")
-            case _:
-                return []
+        '''Filter by exact date, N days from now. 
+           Only 0-90 days are valid, anything outside this range will be clamped'''
+        
+        # Clamp value to clean input. 
+        try: days = min(max(days, 0), 90)
+        except TypeError: return []
+        
+        self.cur.execute("SELECT * FROM Posts WHERE timestamp::date = CURRENT_DATE - (%s)", (days,))
+        return self.cur.fetchall()
+    
+    def LoansRequestedOnDate(self, day:int) -> int:
+        self.cur.execute("""
+                         SELECT count(*) FROM Posts 
+                         WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ'
+                         """, (day,))
+        return self.cur.fetchone()[0]
+
+
+    def GetPostsByStatusAndTimestamp(self, days:int, status:Status) -> list[tuple]:
+        '''Filter by status and exact date, N days from now. 
+           Only 0-90 days are valid, anything outside this range will be clamped'''
+        
+        # Clamp value to clean input.
+        try: days = min(max(days, 0), 90)
+        except TypeError: return []
+        if status == Status.REQ:
+            self.cur.execute("SELECT * FROM Posts WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ'", (days,))
+        elif status == Status.PAID:
+            self.cur.execute("SELECT * FROM Posts WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'PAID'", (days,))
+        else:
+            return []
+
         return self.cur.fetchall()
     
     def CloseConnection(self) -> None:

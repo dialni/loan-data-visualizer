@@ -36,8 +36,9 @@ class Post():
         self.ParseIsActive(commentsCount)
         self.ParseCurrencyType()
         self.ParseCurrencyAmount()
-        # Assume amounts less than 5 to be parsed unsuccessfully
-        if self.amount < 5:
+        # Assume amounts less than 5 or higher than 12.000 to be parsed unsuccessfully
+        # This is temporary until a better parsing system has been implemented.
+        if self.amount < 5 or self.amount > 12000:
             self.status = Status.INVALID
 
     def ParsePostType(self) -> None:
@@ -88,7 +89,7 @@ class Post():
             self.currency = Currency.EUR
             
         ## If not explicit, try to guess currency based on location
-        elif self.title.__contains__('USA)'):
+        elif self.title.__contains__('USA)') or self.title.__contains__('US)'):
             self.currency = Currency.USD
         elif self.title.__contains__(', CA)') or self.title.__contains__('CANADA'):
             self.currency = Currency.CAD
@@ -102,9 +103,12 @@ class Post():
         '''Make an attempt to find the correct loan principal requested
            (or owed in case of [UNPAID] status)'''
         # TODO: Make smarter by being suspecious of non 0 or 5 values in final digit of amount
-        # TODO: Add support for dealing with thousands separators, e.g. 1,500 or 1.500
+        # TODO: Add better support for dealing with thousands separators, e.g. 1,500 or 1.500
         # Remove date from entry
         regexDate = re.sub(r"(\d{1,2}/\d{1,2}/?\d{0,4}|\d{1,2}TH|\d{1,2}ND|\d{1,2}ST)", "", self.title)
+        regexDate = regexDate.replace(",", "", 1)
+        regexDate = regexDate.replace(".", "", 1)
+        
         
         # Try to find group with currency identifier first
         # eg. GBP|EUR|USD|CAD|\$|€|£

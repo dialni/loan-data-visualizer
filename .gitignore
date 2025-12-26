@@ -5,3 +5,5 @@ pyvenv.cfg
 pg_password.txt
 .vscode
 __pycache__
+publish
+node_modules

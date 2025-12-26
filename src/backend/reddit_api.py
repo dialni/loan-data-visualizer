@@ -2,7 +2,6 @@ import requests
 import os
 from dotenv import load_dotenv
 from time import time, sleep
-import example
 from models import Post
 
 # Register apps at https://www.reddit.com/prefs/apps
@@ -14,9 +13,6 @@ class APITool():
     requestTimeout = time()
 
     # Auth
-    APIConnDetails = {}
-    access_token: str
-    token_type: str
     user_agent = "python:loan-data-visualizer:v1.0.0 (by /u/OverallSoup)"
     
     def __init__(self):
@@ -27,7 +23,7 @@ class APITool():
         
         # Optionally, load from .env file instead.
         if self.loadEnvFromFile:
-            if not load_dotenv('.env'):
+            if not load_dotenv('../../.env'):
                 raise SystemExit('Could not load .env file, exiting.')
                 
         self.APIConnDetails = {'REDDIT_USERNAME': os.getenv('REDDIT_USERNAME'),
@@ -66,6 +62,8 @@ class APITool():
         self.token_type = response.json()['token_type']
     
     def GetRequest(self, url: str) -> requests.Response:
+        '''GET request with self-imposed rate-limit'''
+        
         # Very respectful rate-limiter of 1 req/sec
         if (self.requestTimeout) > time():
             print("Sleeping for 1 second")
@@ -73,61 +71,50 @@ class APITool():
         
         self.requestTimeout = time() + 1
         
-        try:
-            response = requests.get(url, 
-                                    headers={'Authorization': f'{self.token_type} {self.access_token}', 
-                                             'User-Agent': self.user_agent})
+        try: response = requests.get(url, 
+                                     headers={'Authorization': f'{self.token_type} {self.access_token}', 
+                                              'User-Agent': self.user_agent})
         except requests.HTTPError as e:
-            print(f"Something went wrong during GetRequest\n{e}\n{e.response.status_code}\n{e.response.json()}")
-            raise SystemExit()
+            raise SystemExit(f"Something went wrong during GetRequest\n{e}\n{e.response.status_code}\n{e.response.json()}")
         
+        # This should not be possible with current rate-limiter of 1 req/sec
+        if float(response.headers['x-ratelimit-remaining']) < 5.0:
+            print(f"Rate-limit somehow exceeded, sleeping for {response.headers['x-ratelimit-reset'] + 4} seconds.")
+            self.requestTimeout = time() + 4.0 + float(response.headers['x-ratelimit-reset'])
+
         return response
     
     def TestConnection(self) -> None:
+        '''A small test to see if authentication worked.'''
         self.GetRequest('https://oauth.reddit.com/api/v1/me')
         print("TestConnection was successful!")
         
-    def GetNewestPosts(self, sr: str, limit=90) -> list[Post]:
-        '''Return latest Posts from specified Subreddit'''
-        nextPage = ""
+    def GetNewestPosts(self, sr:str, nextPage="", limit=100) -> tuple[list[Post], str]:
+        '''Return latest Posts from specified Subreddit, and the key for the next page'''
         posts: list[Post] = []
         
-        for i in range((limit // 100) + 1):
-            if limit == 0:
-                break
-            c = min(limit, 100)
-            print(f"Sending request for {c}")
-            # Use correct API
-            if nextPage == "":
-                response = self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={c}').json()['data']
-            else:
-                response = self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={c}&after={nextPage}').json()['data']
-            limit = limit - c
-            
-            # Send response to be parsed by models.py
-            nextPage = response['after']
-            for child in response['children']:
-                # In accordance with Reddit Data API policy, deleted users are disregarded.
-                if child['data']['author'] != '[deleted]':
-                    posts.append(Post(child['data']['id'], 
-                                      child['data']['title'], 
-                                      child['data']['created'],
-                                      child['data']['num_comments']))
-            
-        return posts
-    
-    def TestExample(self) -> list[Post]:
-        '''Used with example.py to test parsing functions, without hammering Reddit Data API'''
-        posts: list[Post] = []
-        for child in example.json['data']['children']:
+        # Limit to 100 posts, which is enforced by Reddit Data API
+        c = min(limit, 100)
+        print(f"Sending request for {c}")
+        
+        # Use correct API
+        if nextPage == "":
+            response = self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={c}').json()['data']
+        else:
+            response = self.GetRequest(f'https://oauth.reddit.com/r/{sr}/new/?limit={c}&after={nextPage}').json()['data']
+        
+        nextPage = response['after']
+        
+        for child in response['children']:
             # In accordance with Reddit Data API policy, deleted users are disregarded.
             if child['data']['author'] != '[deleted]':
                 posts.append(Post(child['data']['id'], 
                                   child['data']['title'], 
                                   child['data']['created'],
                                   child['data']['num_comments']))
-        return posts
-    
+        
+        return (posts, nextPage)
+
     def GetNewestPostsRaw(self) -> dict:
         '''Used for testing purposes, not for production code'''
         return self.GetRequest(f'https://oauth.reddit.com/r/borrow/new/?limit=1').json()
