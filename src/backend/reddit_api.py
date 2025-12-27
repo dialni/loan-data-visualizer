@@ -23,8 +23,8 @@ class APITool():
         
         # Optionally, load from .env file instead.
         if self.loadEnvFromFile:
-            if not load_dotenv('../../.env'):
-                raise SystemExit('Could not load .env file, exiting.')
+            if not load_dotenv('.env'):
+                raise SystemExit('RedditAPI: Could not load .env file, exiting.')
                 
         self.APIConnDetails = {'REDDIT_USERNAME': os.getenv('REDDIT_USERNAME'),
                                'REDDIT_PASSWORD': os.getenv('REDDIT_PASSWORD'),
@@ -66,7 +66,7 @@ class APITool():
         
         # Very respectful rate-limiter of 1 req/sec
         if (self.requestTimeout) > time():
-            print("Sleeping for 1 second")
+            #print("Sleeping for 1 second")
             sleep(1)
         
         self.requestTimeout = time() + 1
@@ -76,7 +76,7 @@ class APITool():
                                               'User-Agent': self.user_agent})
         except requests.HTTPError as e:
             raise SystemExit(f"Something went wrong during GetRequest\n{e}\n{e.response.status_code}\n{e.response.json()}")
-        
+        print(f"x-ratelimit-remaining: {float(response.headers['x-ratelimit-remaining'])} ", end="")
         # This should not be possible with current rate-limiter of 1 req/sec
         if float(response.headers['x-ratelimit-remaining']) < 5.0:
             print(f"Rate-limit somehow exceeded, sleeping for {response.headers['x-ratelimit-reset'] + 4} seconds.")
@@ -122,3 +122,11 @@ class APITool():
     def GetCommentsOnPostRaw(self, sr:str, id:str) -> dict:
         '''Used for testing purposes, not for production code'''
         return self.GetRequest(f"https://oauth.reddit.com/r/{sr}/comments/{id}").json()
+    
+    def IsPostActive(self, sr:str, id:str) -> bool:
+        response = self.GetRequest(f"https://oauth.reddit.com/r/{sr}/comments/{id}").json()
+        for i in response[1]['data']['children']:
+            if str(i['data']['body']).upper().__contains__('$LOAN'):
+                return True
+            
+        return False

@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from time import sleep
 
 class Database():
-    
+    # TODO: Clean up / Refactor SQL statements
     def __init__(self):
         '''Tool for easily creating and maintaining access to a postgres database'''
-        if not load_dotenv('../../.env'):
-            raise SystemExit('Could not load .env file, exiting.')
+        if not load_dotenv('.env'):
+            raise SystemExit('DB: Could not load .env file, exiting.')
 
         while True:
             try: self.conn = psycopg.connect(f'postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:{os.getenv('POSTGRES_PORT')}/mydb')
@@ -20,6 +20,7 @@ class Database():
             self.cur = self.conn.cursor()
             break
     
+    # Initialize methods
     def CreateTables(self) -> None:
         '''Create necessary tables and types to store Posts. Wipes any data already present.'''
         
@@ -43,7 +44,8 @@ class Database():
                 isActive BOOL,
                 title VARCHAR(200));''')
         self.conn.commit()
-        
+    
+    # CRUD methods
     def InsertPost(self, p: Post) -> None:
         '''Store Post in the database'''
         self.cur.execute("INSERT INTO Posts VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING", 
@@ -86,14 +88,6 @@ class Database():
         self.cur.execute("SELECT * FROM Posts WHERE timestamp::date = CURRENT_DATE - (%s)", (days,))
         return self.cur.fetchall()
     
-    def LoansRequestedOnDate(self, day:int) -> int:
-        self.cur.execute("""
-                         SELECT count(*) FROM Posts 
-                         WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ'
-                         """, (day,))
-        return self.cur.fetchone()[0]
-
-
     def GetPostsByStatusAndTimestamp(self, days:int, status:Status) -> list[tuple]:
         '''Filter by status and exact date, N days from now. 
            Only 0-90 days are valid, anything outside this range will be clamped'''
@@ -110,6 +104,83 @@ class Database():
 
         return self.cur.fetchall()
     
+    def GetNullActiveLoanRequests(self) -> list[str]:
+        '''[REQ] Posts should either be active or not. 
+        A quick predicate check is done beforehand, but not all are directly visible without comments.'''
+        self.cur.execute("SELECT id FROM Posts WHERE status = 'REQ' AND isactive IS NULL")
+        NullPosts = []
+        for id in self.cur.fetchall():
+            NullPosts.append(id[0])
+        
+        return NullPosts
+    
+    def UpdateActiveOnLoan(self, id:str, active:bool) -> None:
+        '''Update the IsActive field of a Post'''
+        self.cur.execute("UPDATE Posts SET isactive = (%s) WHERE id = (%s)", (active,id))
+        self.conn.commit()
+        
+    def AnonymizeData(self) -> None:
+        '''Change Post ID to incrementing index and remove title data.'''
+        self.cur.execute("SELECT id FROM Posts")
+        idx = 1
+        for p in self.cur.fetchall():
+            self.cur.execute("UPDATE Posts SET id = %s, title = NULL WHERE id = %s;", (str(idx), p[0]))
+            idx += 1
+        self.cur.execute("ALTER TABLE Posts ALTER COLUMN id TYPE INTEGER USING id::INTEGER;")
+        self.conn.commit()
+        
+    # Data points
+    def LoansRequestedOnDate(self, day:int) -> int:
+        self.cur.execute("""
+                         SELECT count(*) FROM Posts 
+                         WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ'
+                         """, (day,))
+        return self.cur.fetchone()[0]
+    
+    def LoansGivenOnDate(self, day:int) -> int:
+        self.cur.execute("""
+                         SELECT count(*) FROM Posts 
+                         WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ' AND isactive = true
+                         """, (day,))
+        return self.cur.fetchone()[0]
+    
+    def LoanAmountRequestedOnDate(self, day:int) -> int:
+        # TODO: Apply exchange rate to USD
+        self.cur.execute("""
+                         SELECT sum(amount) FROM Posts 
+                         WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ'
+                         """, (day,))
+        amount = self.cur.fetchone()[0]
+        if amount == None:
+            amount = 0
+        return amount
+    
+    def LoanAmountGivenOnDate(self, day:int) -> int:
+        # TODO: Apply exchange rate to USD
+        self.cur.execute("""
+                         SELECT sum(amount) FROM Posts 
+                         WHERE timestamp::date = CURRENT_DATE - (%s) AND status = 'REQ' AND isactive = true
+                         """, (day,))
+        amount = self.cur.fetchone()[0]
+        if amount == None: amount = 0
+        return amount
+    
+    def LoanPaidAndDefaultRate(self, day:int) -> tuple[int, int]:
+        self.cur.execute("""
+                         WITH paid AS (
+                             SELECT COUNT(*) as paid FROM Posts 
+                             WHERE timestamp::date = CURRENT_DATE - (%s) 
+                             AND status = 'PAID'
+                         ), unpaid AS (
+                             SELECT COUNT(*) as unpaid FROM Posts 
+                             WHERE timestamp::date = CURRENT_DATE - (%s) 
+                             AND status = 'UNPAID'
+                         )
+                         
+                         SELECT * FROM paid, unpaid;
+                         """, (day,day))
+        return self.cur.fetchone()
+
     def CloseConnection(self) -> None:
         '''Ensure a clean disconnect from the database, without using a context manager'''
         self.conn.close()

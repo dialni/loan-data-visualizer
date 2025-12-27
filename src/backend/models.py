@@ -20,13 +20,10 @@ class Currency(Enum):
 
 class Post():
     '''Data Model of Posts on Subreddits'''
-    id: str
     status: Status
-    title: str
     currency: Currency
     amount: int = 0       # Loan principal
-    isActive: bool = None # Only relevant for [REQ] posts
-    timestamp: datetime
+    isActive: bool = None # True if someone has accepted the loan, only relevant for [REQ] posts
     
     def __init__(self, id:str, title:str, timestamp:float, commentsCount: int):
         self.id = id
@@ -36,10 +33,6 @@ class Post():
         self.ParseIsActive(commentsCount)
         self.ParseCurrencyType()
         self.ParseCurrencyAmount()
-        # Assume amounts less than 5 or higher than 12.000 to be parsed unsuccessfully
-        # This is temporary until a better parsing system has been implemented.
-        if self.amount < 5 or self.amount > 12000:
-            self.status = Status.INVALID
 
     def ParsePostType(self) -> None:
         '''Parse what type of post from title, e.g. [REQ], [PAID], etc.'''
@@ -54,10 +47,10 @@ class Post():
             self.status = Status.LATE
         else:
             self.status = Status.INVALID
-            
+
     def ParseIsActive(self, commentCount:int) -> None:
-        '''For [REQ] Posts, do a quick chekc to figure out if anyone accepted the loan. 
-           For unsure [REQ] Posts, inspect Post comments later. Assume pre-arranged to be active.'''
+        '''For [REQ] Posts, do a quick check to figure out if anyone accepted the loan. 
+           For unsure [REQ] Posts, inspect comments on Post later. Assume pre-arranged to be active.'''
         if self.status is not Status.REQ:
             return
         
@@ -65,12 +58,12 @@ class Post():
             self.isActive = True
         
         # Automated bot always leaves 2 comments on each [REQ] Post.
-        # Assume if no one else posted, then loan is not active and don't use API request.
+        # If no one else posted, then assume loan is not active and don't use API request.
         elif commentCount < 3:
             self.isActive = False
     
     def ParseCurrencyType(self) -> None:
-        '''Parses currency from post title.'''
+        '''Parses currency used from post title.'''
         if self.title.__contains__('USD'):
             self.currency = Currency.USD
 
@@ -80,20 +73,20 @@ class Post():
                 self.currency = Currency.CAD
             else:
                 self.currency = Currency.USD
-        
+
         # Explicit currency assignment
         elif self.title.__contains__('£') or self.title.__contains__('GBP'):
             self.currency = Currency.GBP
 
         elif self.title.__contains__('€') or self.title.__contains__('EUR'):
             self.currency = Currency.EUR
-            
+
         ## If not explicit, try to guess currency based on location
         elif self.title.__contains__('USA)') or self.title.__contains__('US)'):
             self.currency = Currency.USD
         elif self.title.__contains__(', CA)') or self.title.__contains__('CANADA'):
             self.currency = Currency.CAD
-            
+
         # If parsing fails completely, invalidate post and discard
         else: 
             self.currency = Currency.XXX
@@ -102,16 +95,16 @@ class Post():
     def ParseCurrencyAmount(self) -> None:
         '''Make an attempt to find the correct loan principal requested
            (or owed in case of [UNPAID] status)'''
-        # TODO: Make smarter by being suspecious of non 0 or 5 values in final digit of amount
-        # TODO: Add better support for dealing with thousands separators, e.g. 1,500 or 1.500
+        
         # Remove date from entry
         regexDate = re.sub(r"(\d{1,2}/\d{1,2}/?\d{0,4}|\d{1,2}TH|\d{1,2}ND|\d{1,2}ST)", "", self.title)
+        # Remove comma separators from cents, e.g. $1,000.00 -> $1.000
+        regexDate = re.sub(r"([\,,.]{1}\d{1,2}[^0-9])", " ", regexDate)
+        # Remove final commas or dots, e.g. $1.000 -> $1000
         regexDate = regexDate.replace(",", "", 1)
         regexDate = regexDate.replace(".", "", 1)
         
-        
-        # Try to find group with currency identifier first
-        # eg. GBP|EUR|USD|CAD|\$|€|£
+        # Try to find group with currency identifier first, e.g. GBP|EUR|USD|CAD|$|€|£
         for group in regexDate.split(')'):
             if re.findall(r'GBP|EUR|USD|CAD|\$|€|£', group).__len__() != 0:
                 try:
@@ -126,17 +119,6 @@ class Post():
             self.amount = int(regexAmounts.pop(0))
         except (IndexError, ValueError): 
             self.status = Status.INVALID
-    
-    def ParseRepayAmount(self):
-        # Remove date-related entries for parsing amounts.
-        # Does not work with alternatives such as 'REPAY $200 JAN 2, JAN 16'
-        # This will be considered acceptable deviation for now
-        raise NotImplementedError
-        regexDate = re.sub(r"(\d{1,2}/\d{1,2}/?\d{0,4}|\d{1,2}TH|\d{1,2}ND|\d{1,2}ST)", "", self.title)
-        regexAmounts = re.findall(r"(\d+)", regexDate)
-        for i in regexAmounts:
-            self.amount += int(regexAmounts.pop())
-        print(self.amount)
             
     def __str__(self):
         return f'{self.id}, {self.status.name}, {self.currency.name}, {self.amount}, {self.title}'
