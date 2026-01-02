@@ -17,7 +17,7 @@ def UpdateTimeframeData() -> list[dict]:
     # Get data from Reddit Data API and store in database
     nextPage = ''
     for _ in range(3):
-        response = api.GetNewestPosts('borrow', nextPage, 100)
+        response = api.GetNewestPosts('borrow', nextPage, 5)
         db.InsertPostList(response[0])
         nextPage = response[1]
     
@@ -45,8 +45,9 @@ def UpdateTimeframeData() -> list[dict]:
                   
                   }
         timeframe.append(result)
-    print(timeframe)
+    #print(timeframe)
     db.CloseConnection()
+    return timeframe
     
     
 if __name__ == "__main__":
