@@ -4,14 +4,18 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from loan_data_visualizer import UpdateTimeframeData
 from os import getenv
+from dotenv import load_dotenv
 
 class ChallengeCode(BaseModel):
     code: str
-    
+
+if not load_dotenv('.env'):
+    raise SystemExit("api_server.py could not open .env, exiting...")
+
 if getenv("API_SERVER_CHALLENGECODE") == None:
     raise SystemExit("API_SERVER_CHALLENGECODE not set, exiting...")
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 
 # Public endpoint for getting data in cache
 @app.get("/get-timeframe")
