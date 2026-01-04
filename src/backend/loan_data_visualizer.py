@@ -61,4 +61,4 @@ if __name__ == "__main__":
     # - Summary and conclusion
     #  - Hypothetical "total expected ROI for X amount invested"
     
-    UpdateTimeframeData()
+    print(UpdateTimeframeData())
