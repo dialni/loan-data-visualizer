@@ -65,11 +65,11 @@ class APITool():
         '''GET request with self-imposed rate-limit'''
         
         # Very respectful rate-limiter of 1 req/sec
-        if (self.requestTimeout) > time():
+        while (self.requestTimeout) > time():
             #print("Sleeping for 1 second")
-            sleep(1)
+            sleep(self.requestTimeout - time())
         
-        self.requestTimeout = time() + 1
+        #self.requestTimeout = time() + 1
         
         try: response = requests.get(url, 
                                      headers={'Authorization': f'{self.token_type} {self.access_token}', 
@@ -78,8 +78,8 @@ class APITool():
             raise SystemExit(f"Something went wrong during GetRequest\n{e}\n{e.response.status_code}\n{e.response.json()}")
         print(f"x-ratelimit-remaining: {float(response.headers['x-ratelimit-remaining'])} ", end="")
         # This should not be possible with current rate-limiter of 1 req/sec
-        if float(response.headers['x-ratelimit-remaining']) < 5.0:
-            print(f"Rate-limit somehow exceeded, sleeping for {response.headers['x-ratelimit-reset'] + 4} seconds.")
+        if float(response.headers['x-ratelimit-remaining']) < 10.0:
+            print(f"Rate-limit somehow exceeded, sleeping for {float(response.headers['x-ratelimit-reset']) + 4.0} seconds.")
             self.requestTimeout = time() + 4.0 + float(response.headers['x-ratelimit-reset'])
 
         return response
