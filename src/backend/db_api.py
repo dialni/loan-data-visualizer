@@ -14,7 +14,7 @@ class Database():
         
         # Is database context postgres (pg)?
         self.isPG = True
-        try: self.conn = psycopg.connect(f'postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:{os.getenv('POSTGRES_PORT')}/mydb')
+        try: self.conn = psycopg.connect(f'postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@db:{os.getenv('POSTGRES_PORT')}/db')
         except psycopg.OperationalError:
             print("Connection could not be made, using temporary SQLite3 instead.")
             open(f'{gettempdir()}/loan-db', 'a')
