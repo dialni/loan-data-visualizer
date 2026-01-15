@@ -13,7 +13,7 @@ timeframecache = TimeframeData()
 async def UpdateCacheScheduler():
     global timeframecache
     while True:
-        await asyncio.sleep(60) # 1 day delay
+        await asyncio.sleep(86000) # 1 day delay
         print("Updating cache...")
         timeframecache.UpdateTimeframeData()
 
