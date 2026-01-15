@@ -1,7 +1,7 @@
 from models import *
 import reddit_api
 import db_api
-import asyncio
+from datetime import datetime, timedelta
 
 # TODO: Apply exchange rates to currency calculations
 
@@ -45,7 +45,7 @@ class TimeframeData():
         # Make timeframe
         for day in range(30):
             query = db.LoanPaidAndDefaultRate(day) # Experiment in querying data, will probably get removed later.
-            result = {#'date': int((datetime.today() - timedelta(day)).timestamp()),
+            result = {'date': int((datetime.today() - timedelta(day)).timestamp()),
                     'reqCount': db.LoansRequestedOnDate(day),
                     'activeCount': db.LoansGivenOnDate(day),
                     'reqAmount': db.LoanAmountRequestedOnDate(day),
