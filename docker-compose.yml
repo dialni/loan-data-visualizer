@@ -1,5 +1,5 @@
 services:
-  db:
+  ldr-db:
     image: postgres:latest
     restart: always
     ports:
@@ -16,7 +16,7 @@ services:
     # Set network later
   
   # Healthchecks not added for now
-  backend:
+  ldr-backend:
     image: ldr-backend
     restart: always
     ports:
@@ -27,17 +27,17 @@ services:
     environment:
       IS_DOCKER: True
     depends_on:
-      db:
+      ldr-db:
         condition: service_healthy
 
   # Healthchecks not added for now
-  frontend:
+  ldr-frontend:
     image: ldr-frontend
     restart: always
     ports:
       - xxxx:80
     depends_on:
-      backend:
+      ldr-backend:
         condition: service_started
 
 volumes:
