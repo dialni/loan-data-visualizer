@@ -1,1 +1,26 @@
 /** Nothing to see here yet **/
+
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+}
+
+#info {
+    display: flex;
+    flex-direction: row;
+    margin: auto;
+}
+
+#info div {
+    margin-left: auto;
+    margin-right: auto;
+    width: 35rem;
+    height: 100%;
+}
