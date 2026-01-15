@@ -4,13 +4,14 @@
 # Why not use GitHub Actions? Because this was way faster.
 
 # Remove old files and ready new directories
-rm -rf publish
+sudo rm -rf publish
 mkdir publish
 mkdir publish/pages
 mkdir publish/assets
 
 # Start npm build
-cd loan-data
+cd loan-data/
+npm install
 npm run build
 cd ..
 
