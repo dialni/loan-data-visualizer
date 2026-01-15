@@ -9,12 +9,28 @@ class Database():
     # TODO: Clean up / Refactor SQL statements
     def __init__(self):
         '''Tool for easily creating and maintaining access to a postgres database'''
-        if not load_dotenv('.env'):
-            raise SystemExit('DB: Could not load .env file, exiting.')
+        
+        # If this is not a Docker container, load a .env file
+        if os.getenv("IS_DOCKER") == None:
+            if not load_dotenv('pg.env'):
+                raise SystemExit('DB: Could not load .env file, exiting.')
         
         # Is database context postgres (pg)?
         self.isPG = True
-        try: self.conn = psycopg.connect(f'postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@db:{os.getenv('POSTGRES_PORT')}/db')
+        
+        if os.getenv('POSTGRES_USER') == None:
+            print("Missing POSTGRES_USER")
+        if os.getenv('POSTGRES_PORT') == None:
+            print("Missing POSTGRES_PORT")
+        if os.getenv('POSTGRES_PASSWORD') == None:
+            print("Missing POSTGRES_PASSWORD")
+        if os.getenv('POSTGRES_DB') == None:
+            print("Missing POSTGRES_DB")
+        if os.getenv('POSTGRES_HOSTNAME') == None:
+            print("Missing POSTGRES_HOSTNAME")
+        
+        # Attempt to connect to Postgresql database, otherwise use local sqlite3 database
+        try: self.conn = psycopg.connect(f'postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOSTNAME')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}')
         except psycopg.OperationalError:
             print("Connection could not be made, using temporary SQLite3 instead.")
             open(f'{gettempdir()}/loan-db', 'a')

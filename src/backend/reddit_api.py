@@ -9,7 +9,6 @@ from models import Post
 class APITool():
     '''Tool for easily creating and maintaining access to Reddit's API'''
     # Config
-    loadEnvFromFile = True
     requestTimeout = time()
 
     # Auth
@@ -21,16 +20,16 @@ class APITool():
     def GetEnv(self) -> None:
         '''Get relevant enviornment variables for connecting to '''
         
-        # Optionally, load from .env file instead.
-        if self.loadEnvFromFile:
+        # If this is not a Docker container, load a .env file
+        if os.getenv("IS_DOCKER") == None:
             if not load_dotenv('.env'):
                 raise SystemExit('RedditAPI: Could not load .env file, exiting.')
-                
+
         self.APIConnDetails = {'REDDIT_USERNAME': os.getenv('REDDIT_USERNAME'),
                                'REDDIT_PASSWORD': os.getenv('REDDIT_PASSWORD'),
                                'CLIENT_ID': os.getenv('CLIENT_ID'),
                                'CLIENT_SECRET': os.getenv('CLIENT_SECRET')}
-        
+
         # Ensure all environment variables are found
         if None in self.APIConnDetails.values():
             print('Could not find all environment variables')
