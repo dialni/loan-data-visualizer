@@ -25,25 +25,30 @@ class TimeframeData():
         db.CreateTables()
 
         # Get data from Reddit Data API and store in database
+        # Reddit limits posts from a category to a maximum of 1000, enough for two weeks consistently
         nextPage = ''
-        for _ in range(30):
-            response = api.GetNewestPosts('borrow', nextPage, 100)
+        for _ in range(1):
+            response = api.GetNewestPosts('borrow', nextPage, 1)
             db.InsertPostList(response[0])
+            if nextPage == response[1]:
+                print("No new pages detected, stopping collection ahead of time.")
+                break
             nextPage = response[1]
         
         # Validate data
         NullPosts = db.GetNullActiveLoanRequests()
+        print(f"Validating {NullPosts.__len__()} posts for loan status")
         i = 0
         for id in NullPosts:
             i += 1
             db.UpdateActiveOnLoan(id, api.IsPostActive('borrow', id))
-            print(f"NullPost validation: {i} / {NullPosts.__len__()}")
+            #print(f"NullPost validation: {i} / {NullPosts.__len__()}")
         
         # Anonymize data
         db.AnonymizeData()
         
-        # Make timeframe
-        for day in range(30):
+        # Make timeframe for the past 14 days, starting from yesterday
+        for day in range(1, 15):
             query = db.LoanPaidAndDefaultRate(day) # Experiment in querying data, will probably get removed later.
             result = {'date': int((datetime.today() - timedelta(day)).timestamp()),
                     'reqCount': db.LoansRequestedOnDate(day),

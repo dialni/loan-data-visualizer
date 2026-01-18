@@ -14,17 +14,18 @@ timeframe = []
 async def UpdateCacheScheduler():
     global timeframe
     while True:
-        print("Updating cache...")
         try:
             resp = requests.get("http://ldr-backend:80/get-timeframe", timeout=5).json()
             timeframe = resp
+            print("Frontend cache has been updated.")
             await asyncio.sleep(86000) # 1 day delay between updates
         except:
-            sleep(5)
+            sleep(3)
 
 # Creates scheduler task on app start
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await asyncio.sleep(5)
     print("Starting UpdateCacheScheduler...")
     asyncio.create_task(UpdateCacheScheduler())
     yield
