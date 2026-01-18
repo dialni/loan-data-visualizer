@@ -31,24 +31,23 @@ class TimeframeData():
         # Get data from Reddit Data API and store in database
         # Reddit limits posts from a category to a maximum of 1000, enough for two weeks consistently
         nextPage = ''
-        for _ in range(1):
-            response = api.GetNewestPosts(self.subreddit, nextPage, 1)
+        for _ in range(10):
+            response = api.GetNewestPosts(self.subreddit, nextPage, 100)
             db.InsertPostList(response[0])
             if nextPage == response[1]:
                 print("No new pages detected, stopping collection ahead of time.")
                 break
             nextPage = response[1]
         
-        # Validate data
+        # Perform check on [REQ] Posts, if unsure about their active status
         NullPosts = db.GetNullActiveLoanRequests()
         print(f"Validating {NullPosts.__len__()} posts for loan status")
         i = 0
         for id in NullPosts:
             i += 1
             db.UpdateActiveOnLoan(id, api.IsPostActive(self.subreddit, id))
-            #print(f"NullPost validation: {i} / {NullPosts.__len__()}")
         
-        # Anonymize data
+        # Anonymize data in accordance with Reddit's rules
         db.AnonymizeData()
         
         # Make timeframe for the past 14 days, starting from yesterday
@@ -63,21 +62,10 @@ class TimeframeData():
                     'loansUnpaid': query[1]
                     }
             timeframe.append(result)
-        #print(timeframe)
         db.CloseConnection()
         return timeframe
         
     
 if __name__ == "__main__":
-
-    # Data points to prepare:
-    # - Basis data
-    #  - Loans requested + Loans given over N day timeframe (2D Histogram)
-    #  - Total amount requested and total amount loaned over N day timeframe (2D Histogram)
-    #  - Default rate vs Paid rate (Pie-chart)
-    #
-    # - Summary and conclusion
-    #  - Hypothetical "total expected ROI for X amount invested"
-    
     timeframe = TimeframeData()
     print(timeframe.GetCache())

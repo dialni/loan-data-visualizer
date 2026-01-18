@@ -12,7 +12,6 @@ class APITool():
     requestTimeout = time()
 
     # Auth
-    user_agent = "python:loan-data-visualizer:v1.0.0 (by /u/OverallSoup)"
     
     def __init__(self):
         self.GetEnv()
@@ -24,12 +23,13 @@ class APITool():
         if os.getenv("IS_DOCKER") == None:
             if not load_dotenv('.env'):
                 raise SystemExit('RedditAPI: Could not load .env file, exiting.')
-
+            
         self.APIConnDetails = {'REDDIT_USERNAME': os.getenv('REDDIT_USERNAME'),
                                'REDDIT_PASSWORD': os.getenv('REDDIT_PASSWORD'),
                                'CLIENT_ID': os.getenv('CLIENT_ID'),
                                'CLIENT_SECRET': os.getenv('CLIENT_SECRET')}
 
+        
         # Ensure all environment variables are found
         if None in self.APIConnDetails.values():
             print('Could not find all environment variables')
@@ -37,7 +37,6 @@ class APITool():
                 if self.APIConnDetails[key] is None:
                     print(f'Missing {key}')
             raise SystemExit()
-        
         print('Env loaded!')
     
     def Auth(self) -> None:
@@ -48,7 +47,7 @@ class APITool():
                      'username': self.APIConnDetails['REDDIT_USERNAME'], 
                      'password': self.APIConnDetails['REDDIT_PASSWORD']}
         
-        headers = {'User-Agent': self.user_agent}
+        headers = {'User-Agent': f"python:loan-data-visualizer:v1.0.1 (by /u/{self.APIConnDetails['REDDIT_USERNAME']})"}
         
         try:
             response = requests.post('https://www.reddit.com/api/v1/access_token', 
@@ -63,12 +62,8 @@ class APITool():
     def GetRequest(self, url: str) -> requests.Response:
         '''GET request with self-imposed rate-limit'''
         
-        # Very respectful rate-limiter of 1 req/sec
         while (self.requestTimeout) > time():
-            #print("Sleeping for 1 second")
             sleep(self.requestTimeout - time())
-        
-        #self.requestTimeout = time() + 1
         
         try: response = requests.get(url, 
                                      headers={'Authorization': f'{self.token_type} {self.access_token}', 
@@ -76,7 +71,6 @@ class APITool():
         except requests.HTTPError as e:
             raise SystemExit(f"Something went wrong during GetRequest\n{e}\n{e.response.status_code}\n{e.response.json()}")
         print(f"x-ratelimit-remaining: {float(response.headers['x-ratelimit-remaining'])} ", end="")
-        # This should not be possible with current rate-limiter of 1 req/sec
         if float(response.headers['x-ratelimit-remaining']) < 10.0:
             print(f"Rate-limit somehow exceeded, sleeping for {float(response.headers['x-ratelimit-reset']) + 4.0} seconds.")
             self.requestTimeout = time() + 4.0 + float(response.headers['x-ratelimit-reset'])
