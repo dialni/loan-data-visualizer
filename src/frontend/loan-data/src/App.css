@@ -1,46 +1,39 @@
-/** Nothing to see here yet **/
+.app {
+    display: flex;
+    flex-direction: row;
+}
 
-header {
+aside {
+    min-width: 11rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 2rem;
+    padding-top: 2rem;
+    border-right: 2px solid #37373d;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+aside h1 {
+    font-weight: 620;
+    font-size: 24px;
     margin-bottom: 2rem;
 }
 
-header h1 {
-    font-size: 2.5rem;
-}
-
-#DataPanels {
-    display: grid;
-    grid-template-columns: auto auto auto;
-    width: 60%;
-    margin: auto;
-}
-
-#Graphs {
-    display: grid;
-    grid-template-columns: auto auto;
-    margin: auto;
-    width: 60%;
-    margin: 2rem auto 2rem auto;
-}
-
-.Graph {
-    /*background-color: red;*/
-    padding: 2rem;
-}
-
-#info {
+nav ul {
     display: flex;
-    flex-direction: row;
-    margin: auto;
+    flex-direction: column;
 }
 
-#info div {
-    margin-left: auto;
-    margin-right: auto;
-    width: 35rem;
-    height: 100%;
+nav ul li a {
+    color: white;
+}
+
+nav ul li a:hover {
+    text-decoration: none;
+}
+
+main {
+    margin-top: 1.5rem;
+    margin-left: 2rem;
 }

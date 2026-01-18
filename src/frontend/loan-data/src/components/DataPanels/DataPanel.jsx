@@ -1,27 +1,34 @@
 import './DataPanel.css'
 
-function RedGreenMarker(val) {
-  if (val > 0){return "#62db39"} 
-  else if (val < 0) {return "#d03520"}
-  else {return "#f0f1f3"}
+function RedGreenMarker(val, normalColor) {
+  if (normalColor === 'green') {
+    if (val > 0){return "#52d154"} 
+      else if (val < 0) {return "#d84219"}
+      else {return "#f0f1f3"}
+  } else {
+    if (val > 0){return "#d84219"} 
+      else if (val < 0) {return "#52d154"}
+      else {return "#f0f1f3"}
+  }
 }
 
-export default function DataPanel({title, datadict}) {
+export default function DataPanel({row1, row2}) {
   return (
     <div className='DataPanel'>
-			<h3>{title}</h3>
-			<div>
-				{
-          datadict.map((o, index) => {
-            return (
-							<div key={index} className='DataPanelRow'>
-								<h4>{o[0]}: <span style={{color: RedGreenMarker(o[1])}}>{o[1].toLocaleString("en-US") + o[2]}</span></h4>
-								{}
-							</div>
-            );
-          })
-        }
-			</div>
+      
+      <div className='DataPanelTitleRow'>
+        <p>{row1['title']}</p>
+        <p style={{color: RedGreenMarker(row1['tval'], row1['tvalc'])}}>{row1['tval'] + '%'}</p>
+      </div>
+			<h3>{row1['valu'] === 'USD' && '$'}{row1['val'].toLocaleString('en-US')}{row1['valu'] === '%' && '%'}</h3>
+      
+      <div className='DataPanelLineBreak' />
+      
+      <div className='DataPanelTitleRow'>
+        <p>{row2['title']}</p>
+        <p style={{color: RedGreenMarker(row2['tval'], row2['tvalc'])}}>{row2['tval'] + '%'}</p>
+      </div>
+			<h3>{row2['valu'] === 'USD' && '$'}{row2['val'].toLocaleString('en-US')}{row2['valu'] === '%' && '%'}</h3>
     </div>
   )
 }
