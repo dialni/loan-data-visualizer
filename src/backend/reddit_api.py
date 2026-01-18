@@ -113,14 +113,6 @@ class APITool():
                                   child['data']['num_comments']))
         
         return (posts, nextPage)
-
-    def GetNewestPostsRaw(self) -> dict:
-        '''Used for testing purposes, not for production code'''
-        return self.GetRequest(f'https://oauth.reddit.com/r/borrow/new/?limit=1').json()
-    
-    def GetCommentsOnPostRaw(self, sr:str, id:str) -> dict:
-        '''Used for testing purposes, not for production code'''
-        return self.GetRequest(f"https://oauth.reddit.com/r/{sr}/comments/{id}").json()
     
     def IsPostActive(self, sr:str, id:str) -> bool:
         response = self.GetRequest(f"https://oauth.reddit.com/r/{sr}/comments/{id}").json()

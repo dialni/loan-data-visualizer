@@ -2,6 +2,7 @@ from models import *
 import reddit_api
 import db_api
 from datetime import datetime, timedelta
+from os import getenv
 
 # TODO: Apply exchange rates to currency calculations
 
@@ -11,6 +12,9 @@ class TimeframeData():
     def __init__(self):
         '''Create cache on initalization'''
         self.cache = self.UpdateTimeframeData()
+        self.subreddit = getenv('TARGET_SUBREDDIT')
+        if self.subreddit == None:
+            raise SystemExit("No subreddit designated, terminating.")
 
     def GetCache(self) -> list[dict]:
         return self.cache
@@ -28,7 +32,7 @@ class TimeframeData():
         # Reddit limits posts from a category to a maximum of 1000, enough for two weeks consistently
         nextPage = ''
         for _ in range(1):
-            response = api.GetNewestPosts('borrow', nextPage, 1)
+            response = api.GetNewestPosts(self.subreddit, nextPage, 1)
             db.InsertPostList(response[0])
             if nextPage == response[1]:
                 print("No new pages detected, stopping collection ahead of time.")
@@ -41,7 +45,7 @@ class TimeframeData():
         i = 0
         for id in NullPosts:
             i += 1
-            db.UpdateActiveOnLoan(id, api.IsPostActive('borrow', id))
+            db.UpdateActiveOnLoan(id, api.IsPostActive(self.subreddit, id))
             #print(f"NullPost validation: {i} / {NullPosts.__len__()}")
         
         # Anonymize data
