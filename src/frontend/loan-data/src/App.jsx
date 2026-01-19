@@ -6,7 +6,6 @@ import './App.css';
 import Dashboard from './pages/Dashboard/Dashboard.jsx'
 import About from './pages/About.jsx'
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
-import NotFound from './pages/NotFound.jsx'
 
 export default function App() {
   return (
@@ -28,7 +27,6 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/*" element={<NotFound />} />
           </Routes>
         </main>
       </BrowserRouter>

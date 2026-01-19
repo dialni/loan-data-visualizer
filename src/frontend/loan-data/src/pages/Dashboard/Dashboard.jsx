@@ -9,7 +9,7 @@ export default function Dashboard() {
   const l = data.map((d) => (d)).sort(function (x, y) { return x.date - y.date }) // Guarantees list has been sorted
 
   // For actual production use
-/*  useEffect(() => {
+  useEffect(() => {
     fetch("http://localhost:xxxx/get-timeframe") // Change this to correct port
     .then((response) => {
         if (!response.ok) {
@@ -20,15 +20,6 @@ export default function Dashboard() {
       .then((json) => {
         setData(json);
       })}, []);
-  console.log("data:")
-  console.log(data);
-*/
-
-  useEffect(() => {
-    const dummy_data = [{ "date": 1768543972, "reqCount": 30, "activeCount": 11, "reqAmount": 20450, "activeAmount": 15925, "loansPaid": 2, "loansUnpaid": 0 }, { "date": 1768457572, "reqCount": 54, "activeCount": 25, "reqAmount": 18545, "activeAmount": 8070, "loansPaid": 7, "loansUnpaid": 1 }, { "date": 1768371172, "reqCount": 54, "activeCount": 25, "reqAmount": 19767, "activeAmount": 8985, "loansPaid": 2, "loansUnpaid": 2 }, { "date": 1768284772, "reqCount": 49, "activeCount": 25, "reqAmount": 13719, "activeAmount": 5130, "loansPaid": 0, "loansUnpaid": 1 }, { "date": 1768198372, "reqCount": 48, "activeCount": 30, "reqAmount": 15750, "activeAmount": 8840, "loansPaid": 2, "loansUnpaid": 0 }, { "date": 1768111972, "reqCount": 50, "activeCount": 33, "reqAmount": 11555, "activeAmount": 6400, "loansPaid": 1, "loansUnpaid": 0 }, { "date": 1768025572, "reqCount": 40, "activeCount": 23, "reqAmount": 11395, "activeAmount": 5675, "loansPaid": 0, "loansUnpaid": 1 }, { "date": 1767939172, "reqCount": 40, "activeCount": 21, "reqAmount": 11630, "activeAmount": 4830, "loansPaid": 9, "loansUnpaid": 1 }, { "date": 1767852772, "reqCount": 54, "activeCount": 24, "reqAmount": 30153, "activeAmount": 7850, "loansPaid": 5, "loansUnpaid": 2 }, { "date": 1767766372, "reqCount": 57, "activeCount": 28, "reqAmount": 25120, "activeAmount": 10715, "loansPaid": 3, "loansUnpaid": 0 }, { "date": 1767679972, "reqCount": 60, "activeCount": 31, "reqAmount": 13990, "activeAmount": 6365, "loansPaid": 2, "loansUnpaid": 0 }, { "date": 1767593572, "reqCount": 57, "activeCount": 33, "reqAmount": 16798, "activeAmount": 11290, "loansPaid": 2, "loansUnpaid": 2 }, { "date": 1767507172, "reqCount": 50, "activeCount": 33, "reqAmount": 13760, "activeAmount": 8790, "loansPaid": 2, "loansUnpaid": 1 }, { "date": 1767420772, "reqCount": 49, "activeCount": 27, "reqAmount": 16022, "activeAmount": 10165, "loansPaid": 2, "loansUnpaid": 0 }];
-    setData(dummy_data)
-    console.log("For anyone wondering about the PlotFigure.jsx warnings, I might attempt a fix for the library later. Eventually.")
-  }, [])
 
   // Function based off this StackOverflow answer: https://stackoverflow.com/a/70729520
   function getScreenWidth() {
@@ -208,7 +199,7 @@ export default function Dashboard() {
             }}
           />
         </div>
-        <h6>Daily Market Graph in USD (14-days, blue = loans requested, orange = loans approved)</h6>
+        <h6>Daily Market Graph in USD (14-days, blue = loan amount requested, orange = loan amount approved)</h6>
         <p style={{ fontSize: 12 }}>This is purely an educational tool in development, and should not be used for anything.</p>
       </section>
     </>

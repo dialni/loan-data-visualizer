@@ -46,8 +46,9 @@ class APITool():
         post_data = {'grant_type': 'password', 
                      'username': self.APIConnDetails['REDDIT_USERNAME'], 
                      'password': self.APIConnDetails['REDDIT_PASSWORD']}
-        
-        headers = {'User-Agent': f"python:loan-data-visualizer:v1.0.1 (by /u/{self.APIConnDetails['REDDIT_USERNAME']})"}
+        self.user_agent = f"python:loan-data-visualizer:v1.0.1 (by /u/{self.APIConnDetails['REDDIT_USERNAME']})"
+        print(f"user-agent: {self.user_agent}")
+        headers = {'User-Agent': self.user_agent}
         
         try:
             response = requests.post('https://www.reddit.com/api/v1/access_token', 
@@ -70,7 +71,7 @@ class APITool():
                                               'User-Agent': self.user_agent})
         except requests.HTTPError as e:
             raise SystemExit(f"Something went wrong during GetRequest\n{e}\n{e.response.status_code}\n{e.response.json()}")
-        print(f"x-ratelimit-remaining: {float(response.headers['x-ratelimit-remaining'])} ", end="")
+        #print(f"x-ratelimit-remaining: {float(response.headers['x-ratelimit-remaining'])} ", end="")
         if float(response.headers['x-ratelimit-remaining']) < 10.0:
             print(f"Rate-limit somehow exceeded, sleeping for {float(response.headers['x-ratelimit-reset']) + 4.0} seconds.")
             self.requestTimeout = time() + 4.0 + float(response.headers['x-ratelimit-reset'])

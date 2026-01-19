@@ -37,14 +37,14 @@ app.mount("/assets", StaticFiles(directory="publish/assets"), name="assets")
 
 templates = Jinja2Templates(directory="publish/pages")
 
-@app.get("/")
-def serve_spa(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
 @app.get("/get-timeframe")
 def GetTimeframe():
     global timeframe
     return JSONResponse(jsonable_encoder(timeframe))
+
+@app.get("/")
+def serve_spa(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots():

@@ -11,10 +11,11 @@ class TimeframeData():
     
     def __init__(self):
         '''Create cache on initalization'''
-        self.cache = self.UpdateTimeframeData()
         self.subreddit = getenv('TARGET_SUBREDDIT')
         if self.subreddit == None:
             raise SystemExit("No subreddit designated, terminating.")
+        print(f"sr: {self.subreddit}")
+        self.cache = self.UpdateTimeframeData()
 
     def GetCache(self) -> list[dict]:
         return self.cache
