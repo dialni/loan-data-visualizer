@@ -1,6 +1,6 @@
 #DataPanelSection {
     display: grid;
-    grid-template-columns: repeat(4, minmax(16rem, 30rem));
+    grid-template-columns: repeat(4, minmax(13.9rem, 30rem));
     gap: 24px;
     margin-left: -20px;
     margin-right: 2rem;

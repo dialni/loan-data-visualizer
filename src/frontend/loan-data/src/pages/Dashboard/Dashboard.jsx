@@ -152,14 +152,14 @@ export default function Dashboard() {
         </div>
         <div>
           <DataPanel row1={{
-            'title': 'Average daily loans requested',
+            'title': 'Loans requested daily',
             'val': calcAvg('reqCount'),
             'valu': '',
             'tval': calcTrend('reqCount'),
             'tvalc': 'green'
           }}
             row2={{
-              'title': 'Average daily loans approved',
+              'title': 'Loans approved daily',
               'val': calcAvg('activeCount'),
               'valu': '',
               'tval': calcTrend('activeCount'),
